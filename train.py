@@ -50,21 +50,11 @@ def train_snn(xe, ye, hn, C):
     w2 = p_inversa(a1, ye, hn, C)
     return(w1, w2)
 
-# Load  parameters of the SNN
-
-
-# def load_config():
-#    aux = np.genfromtxt("config.csv", delimiter=',')
-#    p = np.int(aux[0])  # % de training
-#    hn = np.int(aux[1])  # Hidden nodes
-#    C = np.int_(aux[2])  # Penality
-#    return(hn, C)
-
 
 def main():
     inp = "train_x.csv"
     out = "train_y.csv"
-    hn, C = utiles.load_config()
+    p, hn, C = utiles.load_config()
     xe, ye = utiles.load_data_txt(inp, out)
     w1, w2 = train_snn(xe, ye, hn, C)
     utiles.save_w_npy(w1, w2)

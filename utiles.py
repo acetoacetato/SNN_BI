@@ -4,16 +4,17 @@ import numpy as np
 
 def load_config():
     par = np.genfromtxt("config.csv", delimiter=',')
+    p = np.int(par[0])
     hn = np.int8(par[1])
     C = np.int_(par[2])
-    return(hn, C)
+    return(p, hn, C)
 
 
 def load_data_txt(fnameinp, fnameout):
     X = pd.read_csv(fnameinp, header=None)
     X = np.array(X)
     Y = pd.read_csv(fnameout, header=None)
-    Y = np.array(Y)
+    Y = np.transpose(np.array(Y))
     return (X, Y)
 
 
@@ -46,3 +47,13 @@ def metrics(y, z):
     aux.append(MSE)
     aux.append(RMSE)
     aux.append(R2)
+
+
+def csv_to_numpy(file_path: str) -> np.array:
+    try:
+        file = open(file_path, "r")
+        np_array = np.loadtxt(file_path, delimiter=',')
+        return np_array
+    except Exception as e:
+        raise Exception(
+            f"Couldn't open file {file_path}. Check that route is valid")
