@@ -1,5 +1,27 @@
 import pandas as pd
 import numpy as np
+import math
+import random
+
+
+def csv_to_numpy(file_path):
+    try:
+        file = open(file_path, "r")
+        np_array = np.loadtxt(file_path, delimiter=',')
+        return np_array
+    except Exception as e:
+        raise Exception(
+            f"Couldn't open file {file_path}. Check that route is valid")
+
+
+def metrics(y, z, path):
+    mae = abs(y - z).mean()
+    mse = (np.square(y - z)).mean()
+    rmse = math.sqrt(mse)
+    r2 = 1-((y-z).var()/y.var())
+
+    np.savetxt(path, [mae, mse, r2], delimiter=",", fmt="%.6f")
+    return [mae, mse, rmse, r2]
 
 
 def load_config():
@@ -8,16 +30,6 @@ def load_config():
     hn = np.int8(par[1])
     C = np.int_(par[2])
     return(p, hn, C)
-
-
-def load_data_txt(fnameinp, fnameout, transpose_y=False):
-    X = pd.read_csv(fnameinp, header=None)
-    X = np.array(X)
-    Y = pd.read_csv(fnameout, header=None)
-    Y = np.array(Y)  # np.transpose(np.array(Y))
-    if transpose_y:
-        Y = np.transpose(Y)
-    return (X, Y)
 
 
 def save_w_npy(w1, w2):
@@ -35,29 +47,19 @@ def iniW(next, prev):
     r = np.sqrt(6/next+prev)
     w = np.random.rand(next, prev)
     w = w * 2 * r - r
-    return (w)
+    return w
 
 
-def metrics(y, z):
-    aux = []
-    e = y-z
-    MAE = np.mean(np.absolute(e))
-    MSE = np.mean(np.power(e, 2))
-    RMSE = np.sqrt(MSE)
-    R2 = 1 - (np.var(e)/np.var(y))
-    aux.append(MAE)
-    aux.append(RMSE)
-    aux.append(R2)
-    from sklearn.metrics import r2_score
-    aux.append(r2_score(y.T, z.T))
-    return aux
+def iniW(hn, x0):
+    r = math.sqrt(6/(hn + x0))
+    matrix = []
+    for i in range(0, int(hn)):
+        row = []
+        for j in range(0, x0):
+            row.append(random.random() * 2 * r - r)
+        matrix.append(row)
+    return matrix
 
 
-def csv_to_numpy(file_path: str) -> np.array:
-    try:
-        file = open(file_path, "r")
-        np_array = np.loadtxt(file_path, delimiter=',')
-        return np_array
-    except Exception as e:
-        raise Exception(
-            f"Couldn't open file {file_path}. Check that route is valid")
+def activation(z):
+    return 1 / (1 + np.exp(-z))

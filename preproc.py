@@ -1,16 +1,19 @@
 import numpy as np
-import utiles as ut
+import utiles as Utility
+import random
 
 
-def random_np_array(input_x: np.array, input_y: np.array) -> (np.array, np.array):
-    random_x = input_x.copy()
-    random_y = input_y.copy()
-    np.random.shuffle(np.transpose(random_x))
-    np.random.shuffle(np.transpose(random_y))
-    return random_x, random_y
+def random_np_array(input_x, input_y):
+    indx = len(input_x[0])-1
+    for i in range(1, indx):
+        rd_1 = random.randint(0, indx)
+        rd_2 = random.randint(0, indx)
+        input_x[:, [rd_1, rd_2]] = input_x[:, [rd_2, rd_1]]
+        input_y[[rd_1, rd_2]] = input_y[[rd_2, rd_1]]
+    return input_x, input_y
 
 
-def normalize_np_array(np_array: np.array):
+def normalize_np_array(np_array):
     a = 0.01
     b = 0.99
     if len(np_array.shape) == 2:
@@ -35,9 +38,9 @@ def generate_files(np_array_x: np.array, np_array_y: np.array, training_percenta
     training_split_y = int(np_array_y.shape[0] * training_percentage/100)
     try:
         training_x = np_array_x[0:np_array_x.shape[0], 0:training_split_x]
-        testing_x = np_array_x[0:np_array_x.shape[0], training_split_x::]
+        testing_x = np_array_x[0:np_array_x.shape[0], training_split_x+1::]
         training_y = np_array_y[0:training_split_y]
-        testing_y = np_array_y[training_split_y::]
+        testing_y = np_array_y[training_split_y+1::]
         np.savetxt("./train_x.csv", training_x, delimiter=",")
         np.savetxt("./train_y.csv", training_y, delimiter=",")
         np.savetxt("./test_x.csv", testing_x, delimiter=",")
@@ -48,9 +51,9 @@ def generate_files(np_array_x: np.array, np_array_y: np.array, training_percenta
 
 
 if __name__ == "__main__":
-    input_x = ut.csv_to_numpy("./x_input.csv")
-    input_y = ut.csv_to_numpy("./y_output.csv")
-    p, hn, C = ut.load_config()
+    input_x = Utility.csv_to_numpy("./x_input.csv")
+    input_y = Utility.csv_to_numpy("./y_output.csv")
+    p, hn, C = Utility.load_config()
     random_x, random_y = random_np_array(input_x, input_y)
     normalized_x = normalize_np_array(random_x)
     normalized_y = normalize_np_array(random_y)
