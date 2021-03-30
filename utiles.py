@@ -10,11 +10,13 @@ def load_config():
     return(p, hn, C)
 
 
-def load_data_txt(fnameinp, fnameout):
+def load_data_txt(fnameinp, fnameout, transpose_y=False):
     X = pd.read_csv(fnameinp, header=None)
     X = np.array(X)
     Y = pd.read_csv(fnameout, header=None)
-    Y = np.transpose(np.array(Y))
+    Y = np.array(Y)  # np.transpose(np.array(Y))
+    if transpose_y:
+        Y = np.transpose(Y)
     return (X, Y)
 
 
@@ -44,9 +46,11 @@ def metrics(y, z):
     RMSE = np.sqrt(MSE)
     R2 = 1 - (np.var(e)/np.var(y))
     aux.append(MAE)
-    aux.append(MSE)
     aux.append(RMSE)
     aux.append(R2)
+    from sklearn.metrics import r2_score
+    aux.append(r2_score(y.T, z.T))
+    return aux
 
 
 def csv_to_numpy(file_path: str) -> np.array:

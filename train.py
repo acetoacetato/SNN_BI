@@ -55,7 +55,7 @@ def main():
     inp = "train_x.csv"
     out = "train_y.csv"
     p, hn, C = utiles.load_config()
-    xe, ye = utiles.load_data_txt(inp, out)
+    xe, ye = utiles.load_data_txt(inp, out, True)
     w1, w2 = train_snn(xe, ye, hn, C)
     utiles.save_w_npy(w1, w2)
 
