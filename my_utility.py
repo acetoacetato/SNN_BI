@@ -13,14 +13,39 @@ def csv_to_numpy(file_path):
 
 
 def metrics(y, z, path):
-    e = y - z
-    MAE = np.mean(np.absolute(e))
-    MSE = np.mean(np.power(e, 2))
-    RMSE = np.sqrt(MSE)
-    R2 = 1 - (np.var(e) / np.var(y))
-    aux = np.array([MAE, RMSE, round(R2*100, 6)])
-    print(round(R2*100, 6))
-    np.savetxt(path, [aux], delimiter=",", fmt="%.6f")
+    tp = {k: 0 for k in range(10)}
+    fn = {k: 0 for k in range(10)}
+    fp = {k: 0 for k in range(10)}
+
+    print(y.T[0])
+    for fila in range(len(z[0])):
+        suma = 0
+        print(len(z[fila]))
+        if(np.argmax(z[fila]) == np.argmax(y.T[fila])):
+            tp[np.argmax(z[fila])] = tp[np.argmax(z[fila])] + 1
+        else:
+            fp[np.argmax(z[fila])] = fp[np.argmax(z[fila])] + 1
+            fn[np.argmax(y.T[fila])] = fn[np.argmax(y.T[fila])] + 1
+
+        # recorriendo 10 clases
+        for val in z[fila]:
+            suma = suma + val
+
+    for i in range(10):
+        print(
+            f'f-score clase {i}: {f_score(tp[i], fp[i], fn[i])}')
+
+    return
+
+
+def f_score(tp, fp, fn):
+
+    precision = tp/(tp + fp+0.00000000001)
+    recall = tp/(tp+fn+0.00000000001)
+
+    f_score = 2 * (precision * recall)/(precision + recall + 0.00000000001)
+
+    return f_score
 
 
 def load_config():
@@ -39,6 +64,7 @@ def save_w_npy(w1, w2):
 def save_1_w_npy(w, capas):
     savez_dict = dict()
     for i in range(len(w)):
+
         savez_dict[f'idx{i}'] = w[i]
 
     np.savez('w_dl.npz', **savez_dict)
@@ -72,7 +98,7 @@ def initW_snn(n0, hn, num):
 
 def softmaxEquation(scores):
     scores -= np.max(scores)
-    prob = (np.exp(scores).T / np.sum(np.exp(scores), axis=1))
+    prob = (np.exp(scores) / np.sum(np.exp(scores), axis=0))
     return prob
 
 
@@ -109,7 +135,7 @@ def snn_bw_softmax(act, ye, w1, mu, lambd):
     totalLoss = (np.sum(loss) / numOfSamples) + regLoss
 
     uno = (-1 / numOfSamples)
-    dos = np.dot((ye - prob), act.T)
+    dos = np.dot((ye - prob.T), act.T)
     grad = uno * dos
     grad = grad + (lambd*w1)
     return totalLoss, grad

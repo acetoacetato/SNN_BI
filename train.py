@@ -77,8 +77,8 @@ def main():
     xe = ut.csv_to_numpy('train_x.csv')
     ye = ut.csv_to_numpy('train_y.csv')
 
-    for i in range(len(capas)):
-        train_ae(i, capas[i], mu, maxiter, xe)
+    # for i in range(len(capas)):
+    #    train_ae(i, capas[i], mu, maxiter, xe)
     train_sm(xe, ye, mu_sm, maxiter_sm, len(capas), lambd_sm)
 
 
