@@ -1,15 +1,8 @@
-
-
-# Training SNN based on Pseudo-inverse
-
 import pandas as pd
 import numpy as np
 import math
 import random
-import utiles as Utility
-import math
-
-# Calculate Pseudo-inverse
+import my_utility as ut
 
 
 def p_inversa(a1, ye, hn, C):
@@ -20,39 +13,36 @@ def p_inversa(a1, ye, hn, C):
     return(w2)
 
 
-# Training SNN via Pseudo-inverse
-def train(x, y, ocultas, C):
-    n0 = x.shape[0]
-    w1 = Utility.iniW(ocultas, n0)
-    z = np.dot(w1, x)
-    a = 1/(1+np.exp(-z))
-    w2 = p_inversa(a, y, ocultas, C)
-    return(w1, w2)
+def train_snn(xe, ye, nh, mu, iter):
+    w1, w2 = ut.initW_snn(xe.shape[0], nh, 1)
+    mse = []
+    for i in range(int(iter)):
+        act = ut.snn_ff(xe, w1, w2)
+        w1, w2, cost = ut.snn_bw(act, ye, w1, w2, mu)
+        if (i%200 == 0):
+            print(f"Iteracion : {i} : Costo : {cost}")
+        mse.append(cost)
+    return w1, w2, mse
 
 
 def main():
     inp = "train_x.csv"
     out = "train_y.csv"
     # Loading config
-    p, hn, C = Utility.load_config()
+    _, hn, mu, iter = ut.load_config()
+
     # Loading Data
-    xe = Utility.csv_to_numpy(inp)
-    ye = Utility.csv_to_numpy(out)
+    xe = ut.csv_to_numpy(inp)
+    ye = ut.csv_to_numpy(out)
+
     # Training
-    w1, w2 = train(xe, ye, hn, C)
+    w1, w2, mse = train_snn(xe, ye, hn, mu, iter)
 
     # Save weights
-    Utility.save_w_npy(w1, w2)
+    ut.save_w_npy(w1, w2)
 
-    # Forward
-    z1 = np.dot(w1, xe)
-    a1 = Utility.activation(z1)
 
-    z2 = np.dot(w2, a1)
-
-    Utility.metrics(ye, z2, "train_metrica.csv")
-
-    np.savetxt("train_costos.csv", np.c_[ye, z2], delimiter=",", fmt="%.6f")
+    np.savetxt("train_costo.csv", mse, delimiter=",", fmt="%.6f")
 
 
 if __name__ == '__main__':
