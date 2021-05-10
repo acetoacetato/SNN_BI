@@ -18,9 +18,8 @@ def main():
     capas = []
     for i in range(numero_capa):
         capas.append(cargar_capa(i))
-    x_v = ut.snn_ff_list(xe, capas)
-    x_v = ut.softmaxEquation(x_v)
-    ut.metrics(ye, x_v.T, "test_metrica.csv")
+    x_v = ut.snn_ff_list(xe, capas, True)
+    ut.metrics(ye, x_v, "test_metrica.csv")
 
 
 '''

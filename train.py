@@ -8,35 +8,12 @@ def cargar_capa(num_capa: int):
     return w
 
 
-def train_snn(xe, ye, nh, mu, iter):
-    w1, w2 = ut.initW_snn(xe.shape[0], nh, ye.shape[0])
-    mse = []
-    for i in range(int(iter)):
-        act = ut.snn_ff(xe, w1, w2)
-        w1, w2, cost = ut.snn_bw(act, ye, w1, w2, mu)
-        # if (i % 20 == 0):
-        #    print(f"Iteracion : {i} : Costo : {cost}")
-        mse.append(cost)
-    return w1, w2, mse
-
-
-def train_ae(numero_capa, neur_capa_ant, mu, maxiter, x_v):
-    # Cargamos todas las capas anteriores
-    capas = []
-    for i in range(numero_capa):
-        capas.append(cargar_capa(i))
-
-    if len(capas) == 0:
-        # Creamos la primera capa
-        xe = x_v
-    else:
-        # Generamos la salida para poder entrenar el autoencoder nuevo
-        xe = ut.snn_ff_list(x_v, capas)
-    hn = neur_capa_ant
-    w1, w2, mse = train_snn(xe, xe, hn, mu, maxiter)
-    capas.append(w1)
-    ut.save_1_w_npy(capas, numero_capa)
-    return capas
+def train_ae(hnode, neur_capa_ant, mu, maxiter, x, pinv):
+    w1, _ = ut.initW_snn(neur_capa_ant, x.shape[0], neur_capa_ant)
+    for iter in range(1, maxiter):
+        w2 = ut.pinv_ae(x, w1, pinv)
+        w1, cost = ut.backward_ae(x, w1, w2, mu)
+    return w1
 
 
 def train_sm(xe, ye, mu, iter, numero_capa, lambd):
@@ -50,13 +27,16 @@ def train_sm(xe, ye, mu, iter, numero_capa, lambd):
     f = open('costo_softmax.csv', 'w')
     for i in range(int(iter)):
 
-        cost, grad = ut.snn_bw_softmax(x_v, ye, w1, mu, lambd)
+        grad, cost = ut.snn_bw_softmax(x_v, ye, w1, lambd)
         w1 = w1 - mu * grad
+        if(i % 10 == 0):
+            print(f'iter={i} cost={cost}')
         f.write(f'{cost}\n')
         mse.append(cost)
     capas.append(w1)
     ut.save_1_w_npy(capas, numero_capa)
     f.close()
+
     return capas
 
 
@@ -66,7 +46,7 @@ def main():
 
     _ = f_sae.readline()
     mu = float(f_sae.readline())
-    _ = f_sae.readline()
+    pinv = int(f_sae.readline())
     maxiter = int(f_sae.readline())
     capas = [int(f) for f in f_sae.readlines()]
 
@@ -77,8 +57,8 @@ def main():
     xe = ut.csv_to_numpy('train_x.csv')
     ye = ut.csv_to_numpy('train_y.csv')
 
-    # for i in range(len(capas)):
-    #    train_ae(i, capas[i], mu, maxiter, xe)
+    for i in range(len(capas)):
+        train_ae(i, capas[i], mu, maxiter, xe, pinv)
     train_sm(xe, ye, mu_sm, maxiter_sm, len(capas), lambd_sm)
 
 

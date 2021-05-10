@@ -1,5 +1,19 @@
+import pandas as pd
 import numpy as np
 import math
+
+
+def pinv_ae(x, w1, C):
+    """
+    Calculate Pseudo-inverse
+    """
+    H = activation(np.dot(w1.T, x))
+    xH = np.dot(x, H.T)
+    HH = np.dot(H, H.T) + np.eye(H.shape[0]) / C
+    p_inv = np.linalg.pinv(HH)
+    w2 = np.dot(xH, p_inv).T
+
+    return w2
 
 
 def csv_to_numpy(file_path):
@@ -17,25 +31,26 @@ def metrics(y, z, path):
     fn = {k: 0 for k in range(10)}
     fp = {k: 0 for k in range(10)}
 
-    print(y.T[0])
+    print(y.shape[0])
+    print(z.shape[0])
     for fila in range(len(z[0])):
         suma = 0
-        print(len(z[fila]))
-        if(np.argmax(z[fila]) == np.argmax(y.T[fila])):
-            tp[np.argmax(z[fila])] = tp[np.argmax(z[fila])] + 1
+        zt = z.T
+        if(np.argmax(zt[fila]) == np.argmax(y.T[fila])):
+            tp[np.argmax(zt[fila])] = tp[np.argmax(zt[fila])] + 1
         else:
-            fp[np.argmax(z[fila])] = fp[np.argmax(z[fila])] + 1
+            fp[np.argmax(zt[fila])] = fp[np.argmax(zt[fila])] + 1
             fn[np.argmax(y.T[fila])] = fn[np.argmax(y.T[fila])] + 1
 
         # recorriendo 10 clases
-        for val in z[fila]:
+        for val in z.T[fila]:
             suma = suma + val
-
+    f = open('metrica_dl.csv', 'w')
     for i in range(10):
-        print(
-            f'f-score clase {i}: {f_score(tp[i], fp[i], fn[i])}')
+        print(f'f-score clase {i}: {f_score(tp[i], fp[i], fn[i])}')
+        f.write(f'{f_score(tp[i], fp[i], fn[i])}')
 
-    return
+    f.close()
 
 
 def f_score(tp, fp, fn):
@@ -97,8 +112,9 @@ def initW_snn(n0, hn, num):
 
 
 def softmaxEquation(scores):
-    scores -= np.max(scores)
-    prob = (np.exp(scores) / np.sum(np.exp(scores), axis=0))
+    # scores -= np.max(scores)
+    exp_z = np.exp(scores - np.max(scores))
+    prob = (exp_z / exp_z.sum(axis=0, keepdims=True))
     return prob
 
 
@@ -120,7 +136,7 @@ def snn_bw_softmax(act, ye, w1, mu, lambd):
     return totalLoss, grad
 '''
 
-
+'''
 def snn_bw_softmax(act, ye, w1, mu, lambd):
     """
     act : predicho
@@ -139,6 +155,18 @@ def snn_bw_softmax(act, ye, w1, mu, lambd):
     grad = uno * dos
     grad = grad + (lambd*w1)
     return totalLoss, grad
+'''
+
+
+def snn_bw_softmax(x, y, w, lambW):
+    z = np.dot(w, x)
+    a = softmaxEquation(z)
+    ya = y * np.log(a)
+    Cost = (-1 / x.shape[1]) * np.sum(np.sum(ya))
+    Cost = Cost + lambW / 2 * np.linalg.norm(w, 2)
+    gw = (-1 / x.shape[1]) * np.dot((y - a), x.T) + lambW * w
+
+    return gw, Cost
 
 
 def activation(z):
@@ -149,14 +177,18 @@ def activation_derivated(a):
     return a * (1-a)
 
 
-def snn_ff_list(xv, w_list):
+def snn_ff_list(xv, w_list, con_softmax=False):
     zv = xv
-    for w in w_list:
-        zv = activation(np.dot(w, zv))
+
+    for i in range(len(w_list)):
+        if con_softmax and i == len(w_list) - 1:
+            zv = softmaxEquation(np.dot(w_list[i], zv))
+        else:
+            zv = activation(np.dot(w_list[i], zv))
     return zv
 
 
-def snn_ff(xv, w1, w2):
+def snn_ff(xv, w1, w2, mu):
     zv = np.dot(w1, xv)
     a1 = activation(zv)
     z2 = np.dot(w2, a1)
@@ -164,6 +196,7 @@ def snn_ff(xv, w1, w2):
     return xv, a1, a2
 
 
+'''
 def snn_bw(act, ye, w1, w2, mu):
     xe = act[0]
     a1 = act[1]
@@ -185,3 +218,28 @@ def snn_bw(act, ye, w1, w2, mu):
     cost = np.mean(np.power((ye-xv), 2))
 
     return w1, w2, cost
+'''
+
+
+def snn_fw(xv, w1, w2):
+    zv = np.dot(w1.T, xv)
+    a1 = activation(zv)
+    z2 = np.dot(w2.T, a1)
+    a2 = activation(z2)
+    return xv, a1, a2
+
+
+def backward_ae(x, w1, w2, mu):
+    """
+    Backward autoencoder
+    """
+
+    a = snn_fw(x, w1, w2)
+    e = a[2] - x
+    cost = np.sum(np.sum(e ** 2)) / (2 * e.shape[1])
+    Delta2 = e
+    Delta1 = np.dot(w2, Delta2) * activation_derivated(a[1])
+    gradW1 = np.dot(Delta1, a[0].T)
+    w1 -= mu * gradW1.T
+
+    return w1, cost
