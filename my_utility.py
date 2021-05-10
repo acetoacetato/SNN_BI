@@ -41,7 +41,7 @@ def save_1_w_npy(w, capas):
     for i in range(len(w)):
         savez_dict[f'idx{i}'] = w[i]
 
-    np.savez('pesos.npz', **savez_dict)
+    np.savez('w_dl.npz', **savez_dict)
 
 
 def load_w_npy(file_w):
@@ -68,6 +68,51 @@ def initW_snn(n0, hn, num):
     w2 = iniW(num, hn)
 
     return w1, w2
+
+
+def softmaxEquation(scores):
+    scores -= np.max(scores)
+    prob = (np.exp(scores).T / np.sum(np.exp(scores), axis=1))
+    return prob
+
+
+'''
+def snn_bw_softmax(act, ye, w1, mu, lambd):
+    """
+    act : muestra
+    ye: predicho
+    w1 : pesos capa
+    """
+
+    numOfSamples = ye[0].shape[0]
+    scores = np.dot(act, w1.T)
+    prob = softmaxEquation(scores)
+    loss = -np.log(np.max(prob)) * ye
+    regLoss = (1/2)*lambd*np.sum(w1*w1)
+    totalLoss = (np.sum(loss) / numOfSamples) + regLoss
+    grad = ((-1 / numOfSamples) * np.dot(act.T, (ye - prob))) + (lambd*w1).T
+    return totalLoss, grad
+'''
+
+
+def snn_bw_softmax(act, ye, w1, mu, lambd):
+    """
+    act : predicho
+    ye: a predecir (target)
+    w1 : pesos capa
+    """
+    numOfSamples = ye[0].shape[0]
+    scores = np.dot(w1, act)
+    prob = softmaxEquation(scores.T)
+    loss = -np.log(np.max(prob)) * ye
+    regLoss = (1/2)*lambd*np.sum(w1*w1)
+    totalLoss = (np.sum(loss) / numOfSamples) + regLoss
+
+    uno = (-1 / numOfSamples)
+    dos = np.dot((ye - prob), act.T)
+    grad = uno * dos
+    grad = grad + (lambd*w1)
+    return totalLoss, grad
 
 
 def activation(z):
@@ -103,7 +148,7 @@ def snn_bw(act, ye, w1, w2, mu):
     dZ2 = np.multiply(e, activation_derivated(a2))
     dW2 = np.dot(dZ2, a1.T)
 
-    dZ1 = np.multiply(np.dot(w2, dZ2), activation_derivated(a1))
+    dZ1 = np.multiply(np.dot(w2.T, dZ2), activation_derivated(a1))
     dW1 = np.dot(dZ1, xe.T)
 
     w1 = w1 - mu * dW1
@@ -114,7 +159,3 @@ def snn_bw(act, ye, w1, w2, mu):
     cost = np.mean(np.power((ye-xv), 2))
 
     return w1, w2, cost
-
-
-def snn_bw_softmax(act, ye, w1, w2, mu):
-    print("TODO")
